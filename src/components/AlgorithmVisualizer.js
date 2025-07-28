@@ -1,12 +1,37 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, RotateCcw, Settings, SkipForward, SkipBack, Zap, Brain, Code2, GitBranch, Star, Eye, Activity, AlertCircle, Moon, Sun } from 'lucide-react';
 const generateBFSSteps = (graphData) => {
     const steps = [];
+    
+    // Validate input data
+    if (!graphData || !graphData.nodes || !graphData.edges) {
+      console.error('Invalid graph data:', graphData);
+      return [{
+        type: 'graph',
+        graph: { nodes: ['A'], edges: [], startNode: 'A' },
+        queue: [],
+        visited: new Set(),
+        current: null,
+        result: [],
+        description: 'Invalid graph data provided'
+      }];
+    }
+
     const { nodes, edges, startNode } = graphData;
     const graph = {};
+    
+    // Initialize graph adjacency list
     nodes.forEach(node => graph[node] = []);
+    
+    // Build adjacency list safely
     edges.forEach(edge => {
-      const [from, to] = edge;
-      graph[from].push(to);
-      graph[to].push(from);
+      if (Array.isArray(edge) && edge.length >= 2) {
+        const [from, to] = edge;
+        if (graph[from] && graph[to]) {
+          graph[from].push(to);
+          graph[to].push(from);
+        }
+      }
     });
 
     const visited = new Set();
@@ -39,13 +64,25 @@ const generateBFSSteps = (graphData) => {
           description: `Visiting ${node}`
         });
 
-        for (let neighbor of graph[node] || []) {
+        // Add neighbors safely
+        const neighbors = graph[node] || [];
+        for (let neighbor of neighbors) {
           if (!visited.has(neighbor) && !queue.includes(neighbor)) {
             queue.push(neighbor);
           }
         }
       }
     }
+
+    steps.push({
+      type: 'graph',
+      graph: graphData,
+      queue: [],
+      visited,
+      current: null,
+      result,
+      description: `BFS complete! Order: [${result.join(', ')}]`
+    });
 
     return steps;
   };
@@ -521,8 +558,7 @@ const generateBFSSteps = (graphData) => {
     
     traverse(tree);
     return steps;
-  };import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, SkipForward, SkipBack, Zap, Brain, Code2, GitBranch, Star, Eye, Activity, AlertCircle, Moon, Sun } from 'lucide-react';
+  };
 
 const AlgorithmVisualizer = () => {
   const [code, setCode] = useState('');
@@ -785,19 +821,43 @@ Code: ${codeText}`;
         }
       } else if (dataType === 'graph' || dataType === 'weighted_graph') {
         const parsed = JSON.parse(input);
+        // Ensure we have required properties with defaults
         return { 
-          nodes: parsed.nodes, 
-          edges: parsed.edges, 
-          startNode: parsed.startNode || parsed.nodes[0] 
+          nodes: parsed.nodes || [],
+          edges: parsed.edges || [],
+          startNode: parsed.startNode || (parsed.nodes && parsed.nodes[0]) || 'A'
         };
       } else if (dataType === 'tree') {
         return JSON.parse(input);
-      } else {
+      } else if (dataType === 'array') {
         const parsed = JSON.parse(input);
         return Array.isArray(parsed) ? parsed : parsed.array || [];
+      } else {
+        // Default to array parsing
+        const parsed = JSON.parse(input);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        } else if (parsed.array) {
+          return parsed.array;
+        } else if (parsed.target) {
+          // Binary search format
+          return parsed;
+        }
+        return [];
       }
-    } catch {
-      return null;
+    } catch (error) {
+      console.error('Error parsing input data:', error);
+      // Return safe defaults based on dataType
+      if (dataType === 'graph' || dataType === 'weighted_graph') {
+        return {
+          nodes: ['A', 'B', 'C', 'D', 'E'],
+          edges: [['A', 'B'], ['A', 'C'], ['B', 'D'], ['C', 'E'], ['D', 'E']],
+          startNode: 'A'
+        };
+      } else if (dataType === 'dp') {
+        return 10; // Default for Fibonacci
+      }
+      return [64, 34, 25, 12, 22, 11, 90]; // Default array
     }
   }, []);
 
@@ -920,20 +980,47 @@ Code: ${codeText}`;
   // Run visualization
   const runVisualization = () => {
     if (!detectedAlgorithm) {
-      alert('No algorithm detected!');
+      alert('No algorithm detected! Try writing a more complete algorithm.');
       return;
     }
 
     const data = parseInputData(inputData, detectedAlgorithm.dataType);
     if (!data) {
-      alert('Invalid input data!');
+      alert('Invalid input data format! Please check your input.');
       return;
     }
 
-    const generatedSteps = generateSteps(data, detectedAlgorithm);
-    setSteps(generatedSteps);
-    setCurrentStep(0);
-    setIsPlaying(false);
+    // Validate data based on algorithm type
+    if (detectedAlgorithm.type === 'graph') {
+      if (!data.nodes || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+        alert('Invalid graph data! Please provide nodes array.');
+        return;
+      }
+      if (!data.edges || !Array.isArray(data.edges)) {
+        alert('Invalid graph data! Please provide edges array.');
+        return;
+      }
+    } else if (detectedAlgorithm.type === 'sorting') {
+      if (!Array.isArray(data) || data.length === 0) {
+        alert('Invalid array data! Please provide a non-empty array.');
+        return;
+      }
+    }
+
+    try {
+      const generatedSteps = generateSteps(data, detectedAlgorithm);
+      if (generatedSteps.length === 0) {
+        alert('No visualization steps generated. Please check your algorithm and input data.');
+        return;
+      }
+      
+      setSteps(generatedSteps);
+      setCurrentStep(0);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error('Error generating visualization steps:', error);
+      alert('Error generating visualization. Please check your input data format.');
+    }
   };
 
   // Playback controls
@@ -1315,8 +1402,18 @@ Code: ${codeText}`;
   };
 
   const renderGraph = () => {
+    // Validate visualState.graph
+    if (!visualState.graph || !visualState.graph.nodes || !Array.isArray(visualState.graph.nodes)) {
+      return (
+        <div className={`h-64 ${theme.card} rounded-md border ${theme.border} p-4 flex items-center justify-center`}>
+          <span className={theme.textMuted}>Invalid graph data</span>
+        </div>
+      );
+    }
+
     const { nodes, edges } = visualState.graph;
     const nodePositions = {};
+    
     nodes.forEach((node, i) => {
       const angle = (i / nodes.length) * 2 * Math.PI;
       nodePositions[node] = {
@@ -1335,16 +1432,19 @@ Code: ${codeText}`;
         
         <div className="flex justify-center">
           <svg width="300" height="180" viewBox="0 0 300 180">
-            {edges.map(([from, to], i) => (
+            {/* Render edges if they exist */}
+            {edges && Array.isArray(edges) && edges.map(([from, to], i) => (
               <line key={i} x1={nodePositions[from]?.x} y1={nodePositions[from]?.y}
                     x2={nodePositions[to]?.x} y2={nodePositions[to]?.y}
                     stroke={isDarkMode ? "#6b7280" : "#9ca3af"} strokeWidth="2" />
             ))}
             
+            {/* Render nodes */}
             {nodes.map(node => {
               const isVisited = visualState.visited?.has(node);
               const isCurrent = visualState.current === node;
               const inQueue = visualState.queue?.includes(node);
+              const inStack = visualState.stack?.includes(node);
               
               let nodeColor = isDarkMode ? '#374151' : '#d1d5db';
               let textColor = isDarkMode ? '#d1d5db' : '#374151';
@@ -1355,7 +1455,7 @@ Code: ${codeText}`;
               } else if (isVisited) {
                 nodeColor = '#16a34a';
                 textColor = '#ffffff';
-              } else if (inQueue) {
+              } else if (inQueue || inStack) {
                 nodeColor = '#3b82f6';
                 textColor = '#ffffff';
               }
@@ -1377,6 +1477,12 @@ Code: ${codeText}`;
         <div className="mt-4 text-sm text-center">
           <span className="text-blue-500">Queue: </span>
           <span className="text-blue-400 font-mono">[{visualState.queue?.join(', ') || ''}]</span>
+          {visualState.stack && (
+            <>
+              <span className="ml-4 text-purple-500">Stack: </span>
+              <span className="text-purple-400 font-mono">[{visualState.stack?.join(', ') || ''}]</span>
+            </>
+          )}
           <span className="ml-4 text-green-500">Visited: </span>
           <span className="text-green-400 font-mono">[{visualState.result?.join(', ') || ''}]</span>
         </div>
