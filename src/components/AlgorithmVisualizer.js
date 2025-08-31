@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Settings, SkipForward, SkipBack, Zap, Brain, Code2, GitBranch, Star, Eye, Activity, AlertCircle, Moon, Sun } from 'lucide-react';
+
 const generateBFSSteps = (graphData) => {
     const steps = [];
     
@@ -220,25 +221,65 @@ const generateBFSSteps = (graphData) => {
 
   const generateFibonacciSteps = (n) => {
     const steps = [];
+    
+    // Validate input
+    if (typeof n !== 'number' || n < 0) {
+      return [{
+        type: 'dp',
+        dp: [0],
+        current: 0,
+        description: 'Invalid input for Fibonacci'
+      }];
+    }
+
     const dp = new Array(n + 1).fill(0);
     
-    if (n <= 1) return [{
-      type: 'dp',
-      dp: [n],
-      current: 0,
-      description: `Base case: F(${n}) = ${n}`
-    }];
+    if (n === 0) {
+      return [{
+        type: 'dp',
+        dp: [0],
+        current: 0,
+        description: 'F(0) = 0'
+      }];
+    }
+    
+    if (n === 1) {
+      steps.push({
+        type: 'dp',
+        dp: [0],
+        current: 0,
+        description: 'Base case: F(0) = 0'
+      });
+      
+      steps.push({
+        type: 'dp',
+        dp: [0, 1],
+        current: 1,
+        description: 'Base case: F(1) = 1'
+      });
+      
+      return steps;
+    }
 
+    // Base cases
     dp[0] = 0;
     dp[1] = 1;
     
     steps.push({
       type: 'dp',
+      dp: [0],
+      current: 0,
+      description: 'Base case: F(0) = 0'
+    });
+    
+    steps.push({
+      type: 'dp',
       dp: [0, 1],
       current: 1,
-      description: 'Base cases: F(0) = 0, F(1) = 1'
+      description: 'Base case: F(1) = 1'
     });
 
+    // Build up the sequence
     for (let i = 2; i <= n; i++) {
       dp[i] = dp[i-1] + dp[i-2];
       steps.push({
@@ -248,6 +289,13 @@ const generateBFSSteps = (graphData) => {
         description: `F(${i}) = F(${i-1}) + F(${i-2}) = ${dp[i-1]} + ${dp[i-2]} = ${dp[i]}`
       });
     }
+
+    steps.push({
+      type: 'dp',
+      dp: [...dp],
+      current: n,
+      description: `Fibonacci sequence complete! F(${n}) = ${dp[n]}`
+    });
 
     return steps;
   };
@@ -574,7 +622,61 @@ const AlgorithmVisualizer = () => {
   const [aiError, setAiError] = useState(null);
   const [tokensUsed, setTokensUsed] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Real-time features
+  const [watchCount, setWatchCount] = useState(42);
+  const [starCount, setStarCount] = useState(1247);
+  const [isWatching, setIsWatching] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
+  const [viewersCount, setViewersCount] = useState(8);
+  
   const intervalRef = useRef(null);
+  const realtimeRef = useRef(null);
+
+  // Real-time data simulation
+  useEffect(() => {
+    // Simulate real-time viewer activity
+    realtimeRef.current = setInterval(() => {
+      // Randomly fluctuate viewer count (simulates people coming and going)
+      setViewersCount(prev => {
+        const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+        const newCount = prev + change;
+        return Math.max(1, Math.min(newCount, 25)); // Keep between 1-25 viewers
+      });
+
+      // Occasionally add stars (much less frequent)
+      if (Math.random() < 0.02) { // 2% chance every 5 seconds = roughly 1 star per 4 minutes
+        setStarCount(prev => prev + 1);
+      }
+
+      // Occasionally add watchers (less frequent than viewers)
+      if (Math.random() < 0.01) { // 1% chance every 5 seconds
+        setWatchCount(prev => prev + 1);
+      }
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(realtimeRef.current);
+  }, []);
+
+  // Handle watch button
+  const handleWatch = () => {
+    setIsWatching(!isWatching);
+    setWatchCount(prev => isWatching ? prev - 1 : prev + 1);
+  };
+
+  // Handle star button
+  const handleStar = () => {
+    setIsStarred(!isStarred);
+    setStarCount(prev => isStarred ? prev - 1 : prev + 1);
+  };
+
+  // Format large numbers (e.g., 1247 -> 1.2k)
+  const formatCount = (count) => {
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+    return count.toString();
+  };
 
   // OpenAI API Integration
   const analyzeCodeWithOpenAI = async (codeText) => {
@@ -817,7 +919,12 @@ Code: ${codeText}`;
         if (input.includes('{')) {
           return JSON.parse(input);
         } else {
-          return parseInt(input); // For simple numeric inputs like Fibonacci
+          // For simple numeric inputs like Fibonacci
+          const num = parseInt(input.trim());
+          if (isNaN(num)) {
+            throw new Error('Invalid number');
+          }
+          return num;
         }
       } else if (dataType === 'graph' || dataType === 'weighted_graph') {
         const parsed = JSON.parse(input);
@@ -847,15 +954,21 @@ Code: ${codeText}`;
       }
     } catch (error) {
       console.error('Error parsing input data:', error);
+      
       // Return safe defaults based on dataType
-      if (dataType === 'graph' || dataType === 'weighted_graph') {
+      if (dataType === 'dp') {
+        // For DP, try to parse as simple number first
+        const num = parseInt(input);
+        if (!isNaN(num)) {
+          return num;
+        }
+        return 10; // Default for Fibonacci
+      } else if (dataType === 'graph' || dataType === 'weighted_graph') {
         return {
           nodes: ['A', 'B', 'C', 'D', 'E'],
           edges: [['A', 'B'], ['A', 'C'], ['B', 'D'], ['C', 'E'], ['D', 'E']],
           startNode: 'A'
         };
-      } else if (dataType === 'dp') {
-        return 10; // Default for Fibonacci
       }
       return [64, 34, 25, 12, 22, 11, 90]; // Default array
     }
@@ -985,7 +1098,7 @@ Code: ${codeText}`;
     }
 
     const data = parseInputData(inputData, detectedAlgorithm.dataType);
-    if (!data) {
+    if (data === null || data === undefined) {
       alert('Invalid input data format! Please check your input.');
       return;
     }
@@ -1005,6 +1118,23 @@ Code: ${codeText}`;
         alert('Invalid array data! Please provide a non-empty array.');
         return;
       }
+    } else if (detectedAlgorithm.type === 'dynamic_programming') {
+      if (detectedAlgorithm.algorithm.includes('Fibonacci')) {
+        if (typeof data !== 'number' || data < 0 || data > 50) {
+          alert('Invalid Fibonacci input! Please provide a number between 0 and 50.');
+          return;
+        }
+      } else if (detectedAlgorithm.algorithm.includes('Knapsack')) {
+        if (!data.capacity || !data.weights || !data.values) {
+          alert('Invalid Knapsack input! Please provide capacity, weights, and values.');
+          return;
+        }
+      } else if (detectedAlgorithm.algorithm.includes('LCS')) {
+        if (!data.str1 || !data.str2) {
+          alert('Invalid LCS input! Please provide str1 and str2.');
+          return;
+        }
+      }
     }
 
     try {
@@ -1019,7 +1149,7 @@ Code: ${codeText}`;
       setIsPlaying(false);
     } catch (error) {
       console.error('Error generating visualization steps:', error);
-      alert('Error generating visualization. Please check your input data format.');
+      alert(`Error generating visualization: ${error.message}. Please check your input data format.`);
     }
   };
 
@@ -1064,7 +1194,10 @@ Code: ${codeText}`;
   }, [currentStep, steps]);
 
   useEffect(() => {
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      clearInterval(intervalRef.current);
+      clearInterval(realtimeRef.current);
+    };
   }, []);
 
   // Theme styles
@@ -1538,16 +1671,48 @@ Code: ${codeText}`;
                       className={`${theme.button} border ${theme.border} p-2 rounded-md transition-colors`}>
                 {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
-              <button className={`flex items-center gap-1 ${theme.button} border ${theme.border} px-3 py-1.5 rounded-md text-sm`}>
-                <Eye className="w-4 h-4" />
-                <span>Watch</span>
-                <span className={`${theme.button} px-1.5 py-0.5 rounded text-xs ml-1`}>42</span>
+              <button 
+                onClick={handleWatch}
+                className={`flex items-center gap-1 border px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  isWatching 
+                    ? 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700' 
+                    : `${theme.button} border ${theme.border} hover:border-blue-400`
+                }`}
+              >
+                <Eye className={`w-4 h-4 ${isWatching ? 'fill-current' : ''}`} />
+                <span>{isWatching ? 'Unwatch' : 'Watch'}</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs ml-1 ${
+                  isWatching 
+                    ? 'bg-blue-700 text-blue-100' 
+                    : `${theme.button}`
+                }`}>
+                  {watchCount}
+                </span>
               </button>
-              <button className={`flex items-center gap-1 ${theme.button} border ${theme.border} px-3 py-1.5 rounded-md text-sm`}>
-                <Star className="w-4 h-4" />
-                <span>Star</span>
-                <span className={`${theme.button} px-1.5 py-0.5 rounded text-xs ml-1`}>1.2k</span>
+              <button 
+                onClick={handleStar}
+                className={`flex items-center gap-1 border px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  isStarred 
+                    ? 'bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700' 
+                    : `${theme.button} border ${theme.border} hover:border-yellow-400`
+                }`}
+              >
+                <Star className={`w-4 h-4 ${isStarred ? 'fill-current' : ''}`} />
+                <span>{isStarred ? 'Unstar' : 'Star'}</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs ml-1 ${
+                  isStarred 
+                    ? 'bg-yellow-700 text-yellow-100' 
+                    : `${theme.button}`
+                }`}>
+                  {formatCount(starCount)}
+                </span>
               </button>
+              
+              {/* Live viewers indicator */}
+              <div className={`flex items-center gap-2 px-3 py-1.5 ${theme.button} border ${theme.border} rounded-md text-sm`}>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className={theme.textMuted}>{viewersCount} viewing</span>
+              </div>
             </div>
           </div>
         </div>
