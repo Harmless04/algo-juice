@@ -1719,6 +1719,17 @@ Code: ${codeText}`;
       </header>
 
       <div className="container mx-auto p-6">
+        {/* Visualization Types Info */}
+        <div className={`mb-6 ${theme.card} rounded-md border ${theme.border} p-4`}>
+          <h2 className="text-lg font-semibold mb-2">Available Visualizations</h2>
+          <ul className={`list-disc pl-6 text-sm ${theme.textMuted}`}>
+            <li>Graph Traversal: Breadth-First Search (BFS), Depth-First Search (DFS), Dijkstra's Algorithm</li>
+            <li>Sorting: Bubble Sort, Quick Sort, Merge Sort</li>
+            <li>Searching: Binary Search</li>
+            <li>Dynamic Programming: Fibonacci Sequence, 0/1 Knapsack, Longest Common Subsequence (LCS)</li>
+            <li>Tree Traversal: Inorder Traversal</li>
+          </ul>
+        </div>
         {/* Navigation */}
         <div className={`border-b ${theme.border} mb-6`}>
           <nav className="flex gap-6">
