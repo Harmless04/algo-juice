@@ -632,6 +632,9 @@ const AlgorithmVisualizer = () => {
   
   const intervalRef = useRef(null);
   const realtimeRef = useRef(null);
+  const codeInputRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('code');
+  const [visualizerPopped, setVisualizerPopped] = useState(false);
 
   // Real-time data simulation
   useEffect(() => {
@@ -1650,6 +1653,20 @@ Code: ${codeText}`;
     );
   };
 
+  // Navigation actions
+  const handleCodeTab = () => {
+    setActiveTab('code');
+    setVisualizerPopped(false);
+    setTimeout(() => {
+      codeInputRef.current?.focus();
+    }, 100); // Small delay for smoothness
+  };
+
+  const handleVisualizerTab = () => {
+    setActiveTab('visualizer');
+    setVisualizerPopped(true);
+  };
+
   return (
     <div className={`min-h-screen ${theme.bg} ${theme.text}`}>
       {/* Header */}
@@ -1733,11 +1750,27 @@ Code: ${codeText}`;
         {/* Navigation */}
         <div className={`border-b ${theme.border} mb-6`}>
           <nav className="flex gap-6">
-            <button className={`flex items-center gap-2 px-3 py-2 border-b-2 border-orange-500 ${theme.text} font-medium`}>
+            <button
+              className={`flex items-center gap-2 px-3 py-2 border-b-2 transition-all duration-200 ${
+                activeTab === 'code'
+                  ? 'border-orange-500 font-medium ' + theme.text
+                  : 'border-transparent ' + theme.textMuted
+              }`}
+              onClick={handleCodeTab}
+              type="button"
+            >
               <Code2 className="w-4 h-4" />
               Code
             </button>
-            <button className={`flex items-center gap-2 px-3 py-2 ${theme.textMuted}`}>
+            <button
+              className={`flex items-center gap-2 px-3 py-2 transition-all duration-200 ${
+                activeTab === 'visualizer'
+                  ? 'border-b-2 border-green-500 font-medium ' + theme.text
+                  : 'border-transparent ' + theme.textMuted
+              }`}
+              onClick={handleVisualizerTab}
+              type="button"
+            >
               <Activity className="w-4 h-4" />
               Visualizer
             </button>
@@ -1796,6 +1829,7 @@ Code: ${codeText}`;
                       ))}
                     </div>
                     <textarea
+                      ref={codeInputRef}
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
                       className={`flex-1 bg-transparent ${theme.text} p-2 resize-none outline-none leading-6`}
@@ -1835,14 +1869,37 @@ Code: ${codeText}`;
           </div>
 
           {/* Visualization */}
-          <div className={`${theme.card} rounded-md border ${theme.border}`}>
-            <div className={`border-b ${theme.border} px-4 py-3`}>
+          <div
+            className={`
+              ${theme.card} rounded-md border ${theme.border}
+              transition-all duration-500
+              ${visualizerPopped ? 'z-50 shadow-2xl scale-105 translate-x-2 opacity-100' : 'opacity-95'}
+              ${activeTab === 'visualizer' ? '' : 'opacity-70'}
+            `}
+            style={{
+              position: visualizerPopped ? 'absolute' : 'relative',
+              top: visualizerPopped ? '80px' : 'auto',
+              right: visualizerPopped ? '40px' : 'auto',
+              width: visualizerPopped ? 'calc(100vw - 80px)' : undefined,
+              maxWidth: visualizerPopped ? '700px' : undefined,
+              background: visualizerPopped ? (isDarkMode ? '#18181b' : '#fff') : undefined,
+            }}
+          >
+            <div className={`border-b ${theme.border} px-4 py-3 flex justify-between items-center`}>
               <h3 className={`text-sm font-medium ${theme.textMuted} flex items-center gap-2`}>
                 <Activity className="w-4 h-4" />
                 Live Visualization
               </h3>
+              {visualizerPopped && (
+                <button
+                  className="ml-auto px-2 py-1 rounded bg-gray-700 text-white text-xs"
+                  onClick={() => setVisualizerPopped(false)}
+                  type="button"
+                >
+                  Close
+                </button>
+              )}
             </div>
-            
             <div className="p-4">
               {/* Controls */}
               <div className="flex items-center gap-2 mb-4">
