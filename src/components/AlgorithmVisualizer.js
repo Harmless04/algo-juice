@@ -632,6 +632,7 @@ const AlgorithmVisualizer = () => {
   
   const intervalRef = useRef(null);
   const realtimeRef = useRef(null);
+  const codeInputRef = useRef(null);
 
   // Real-time data simulation
   useEffect(() => {
@@ -1680,7 +1681,14 @@ Code: ${codeText}`;
         {/* Navigation */}
         <div className={`border-b ${theme.border} mb-6`}>
           <nav className="flex gap-6">
-            <button className={`flex items-center gap-2 px-3 py-2 border-b-2 border-orange-500 ${theme.text} font-medium`}>
+            <button
+              className={`flex items-center gap-2 px-3 py-2 border-b-2 border-orange-500 ${theme.text} font-medium`}
+              onClick={() => {
+                if (codeInputRef.current) {
+                  codeInputRef.current.focus();
+                }
+              }}
+            >
               <Code2 className="w-4 h-4" />
               Code
             </button>
@@ -1736,6 +1744,7 @@ Code: ${codeText}`;
                       ))}
                     </div>
                     <textarea
+                      ref={codeInputRef}
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
                       className={`flex-1 bg-transparent ${theme.text} p-2 resize-none outline-none leading-6`}
