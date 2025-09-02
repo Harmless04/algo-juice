@@ -1660,7 +1660,7 @@ Code: ${codeText}`;
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <GitBranch className={`w-6 h-6 ${theme.textMuted}`} />
-                <h1 className="text-xl font-semibold">algorithm-visualizer</h1>
+                <h1 className="text-xl font-semibold">Algojuice</h1>
               </div>
               <span className={`${theme.button} border ${theme.border} px-2 py-1 rounded-full text-xs`}>Public</span>
               {tokensUsed > 0 && (
