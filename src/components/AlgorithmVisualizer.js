@@ -1707,7 +1707,9 @@ Code: ${codeText}`;
               <div className="flex items-center gap-2 mb-2">
                 <Brain className={`w-4 h-4 ${isAnalyzing ? 'animate-pulse text-yellow-500' : 'text-blue-500'}`} />
                 <span className={`text-sm font-medium ${theme.textMuted}`}>
-                  {isAnalyzing ? 'AI Analyzing...' : 'AI Detection'}
+                  {isAnalyzing
+                    ? 'Juicing your code...'
+                    : 'Your code will be juiced and visualized for you!'}
                 </span>
               </div>
               
