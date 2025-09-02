@@ -1667,8 +1667,15 @@ Code: ${codeText}`;
                 <span className="bg-blue-900 text-blue-300 px-2 py-1 rounded-full text-xs">{tokensUsed} tokens</span>
               )}
             </div>
-            {/* Replace controls with quote */}
+            {/* Theme Switcher */}
             <div className="flex items-center gap-3">
+              <button
+                className={`p-2 rounded-full border ${theme.border} ${theme.button}`}
+                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                onClick={() => setIsDarkMode((prev) => !prev)}
+              >
+                {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-700" />}
+              </button>
               <span className={`italic text-sm ${theme.textMuted}`}>
                 "Throughout heaven and earth, I alone am the honored one." – Gojo Satoru
               </span>
