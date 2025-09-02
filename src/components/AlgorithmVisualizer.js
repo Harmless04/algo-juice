@@ -632,9 +632,6 @@ const AlgorithmVisualizer = () => {
   
   const intervalRef = useRef(null);
   const realtimeRef = useRef(null);
-  const codeInputRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('code');
-  const [visualizerPopped, setVisualizerPopped] = useState(false);
 
   // Real-time data simulation
   useEffect(() => {
@@ -1653,20 +1650,6 @@ Code: ${codeText}`;
     );
   };
 
-  // Navigation actions
-  const handleCodeTab = () => {
-    setActiveTab('code');
-    setVisualizerPopped(false);
-    setTimeout(() => {
-      codeInputRef.current?.focus();
-    }, 100); // Small delay for smoothness
-  };
-
-  const handleVisualizerTab = () => {
-    setActiveTab('visualizer');
-    setVisualizerPopped(true);
-  };
-
   return (
     <div className={`min-h-screen ${theme.bg} ${theme.text}`}>
       {/* Header */}
@@ -1683,53 +1666,11 @@ Code: ${codeText}`;
                 <span className="bg-blue-900 text-blue-300 px-2 py-1 rounded-full text-xs">{tokensUsed} tokens</span>
               )}
             </div>
+            {/* Replace controls with quote */}
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsDarkMode(!isDarkMode)}
-                      className={`${theme.button} border ${theme.border} p-2 rounded-md transition-colors`}>
-                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-              <button 
-                onClick={handleWatch}
-                className={`flex items-center gap-1 border px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  isWatching 
-                    ? 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700' 
-                    : `${theme.button} border ${theme.border} hover:border-blue-400`
-                }`}
-              >
-                <Eye className={`w-4 h-4 ${isWatching ? 'fill-current' : ''}`} />
-                <span>{isWatching ? 'Unwatch' : 'Watch'}</span>
-                <span className={`px-1.5 py-0.5 rounded text-xs ml-1 ${
-                  isWatching 
-                    ? 'bg-blue-700 text-blue-100' 
-                    : `${theme.button}`
-                }`}>
-                  {watchCount}
-                </span>
-              </button>
-              <button 
-                onClick={handleStar}
-                className={`flex items-center gap-1 border px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  isStarred 
-                    ? 'bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700' 
-                    : `${theme.button} border ${theme.border} hover:border-yellow-400`
-                }`}
-              >
-                <Star className={`w-4 h-4 ${isStarred ? 'fill-current' : ''}`} />
-                <span>{isStarred ? 'Unstar' : 'Star'}</span>
-                <span className={`px-1.5 py-0.5 rounded text-xs ml-1 ${
-                  isStarred 
-                    ? 'bg-yellow-700 text-yellow-100' 
-                    : `${theme.button}`
-                }`}>
-                  {formatCount(starCount)}
-                </span>
-              </button>
-              
-              {/* Live viewers indicator */}
-              <div className={`flex items-center gap-2 px-3 py-1.5 ${theme.button} border ${theme.border} rounded-md text-sm`}>
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className={theme.textMuted}>{viewersCount} viewing</span>
-              </div>
+              <span className={`italic text-sm ${theme.textMuted}`}>
+                "Throughout heaven and earth, I alone am the honored one." – Gojo Satoru
+              </span>
             </div>
           </div>
         </div>
@@ -1739,27 +1680,11 @@ Code: ${codeText}`;
         {/* Navigation */}
         <div className={`border-b ${theme.border} mb-6`}>
           <nav className="flex gap-6">
-            <button
-              className={`flex items-center gap-2 px-3 py-2 border-b-2 transition-all duration-200 ${
-                activeTab === 'code'
-                  ? 'border-orange-500 font-medium ' + theme.text
-                  : 'border-transparent ' + theme.textMuted
-              }`}
-              onClick={handleCodeTab}
-              type="button"
-            >
+            <button className={`flex items-center gap-2 px-3 py-2 border-b-2 border-orange-500 ${theme.text} font-medium`}>
               <Code2 className="w-4 h-4" />
               Code
             </button>
-            <button
-              className={`flex items-center gap-2 px-3 py-2 transition-all duration-200 ${
-                activeTab === 'visualizer'
-                  ? 'border-b-2 border-green-500 font-medium ' + theme.text
-                  : 'border-transparent ' + theme.textMuted
-              }`}
-              onClick={handleVisualizerTab}
-              type="button"
-            >
+            <button className={`flex items-center gap-2 px-3 py-2 ${theme.textMuted}`}>
               <Activity className="w-4 h-4" />
               Visualizer
             </button>
@@ -1769,13 +1694,6 @@ Code: ${codeText}`;
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Code Editor */}
           <div className={`${theme.card} rounded-md border ${theme.border}`}>
-            <div className={`border-b ${theme.border} px-4 py-3`}>
-              <h3 className={`text-sm font-medium ${theme.textMuted} flex items-center gap-2`}>
-                <Code2 className="w-4 h-4" />
-                algorithm.js
-              </h3>
-            </div>
-            
             {/* AI Detection */}
             <div className={`border-b ${theme.border} px-4 py-3 ${theme.editor}`}>
               <div className="flex items-center gap-2 mb-2">
@@ -1818,7 +1736,6 @@ Code: ${codeText}`;
                       ))}
                     </div>
                     <textarea
-                      ref={codeInputRef}
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
                       className={`flex-1 bg-transparent ${theme.text} p-2 resize-none outline-none leading-6`}
@@ -1858,37 +1775,14 @@ Code: ${codeText}`;
           </div>
 
           {/* Visualization */}
-          <div
-            className={`
-              ${theme.card} rounded-md border ${theme.border}
-              transition-all duration-500
-              ${visualizerPopped ? 'z-50 shadow-2xl scale-105 translate-x-2 opacity-100' : 'opacity-95'}
-              ${activeTab === 'visualizer' ? '' : 'opacity-70'}
-            `}
-            style={{
-              position: visualizerPopped ? 'absolute' : 'relative',
-              top: visualizerPopped ? '80px' : 'auto',
-              right: visualizerPopped ? '40px' : 'auto',
-              width: visualizerPopped ? 'calc(100vw - 80px)' : undefined,
-              maxWidth: visualizerPopped ? '700px' : undefined,
-              background: visualizerPopped ? (isDarkMode ? '#18181b' : '#fff') : undefined,
-            }}
-          >
-            <div className={`border-b ${theme.border} px-4 py-3 flex justify-between items-center`}>
+          <div className={`${theme.card} rounded-md border ${theme.border}`}>
+            <div className={`border-b ${theme.border} px-4 py-3`}>
               <h3 className={`text-sm font-medium ${theme.textMuted} flex items-center gap-2`}>
                 <Activity className="w-4 h-4" />
                 Live Visualization
               </h3>
-              {visualizerPopped && (
-                <button
-                  className="ml-auto px-2 py-1 rounded bg-gray-700 text-white text-xs"
-                  onClick={() => setVisualizerPopped(false)}
-                  type="button"
-                >
-                  Close
-                </button>
-              )}
             </div>
+            
             <div className="p-4">
               {/* Controls */}
               <div className="flex items-center gap-2 mb-4">
@@ -1941,7 +1835,7 @@ Code: ${codeText}`;
           </div>
         </div>
 
-        {/* Visualization Types Info - moved to lower part */}
+        {/* Visualization Types Info moved to bottom */}
         <div className={`mt-10 ${theme.card} rounded-md border ${theme.border} p-4`}>
           <h2 className="text-lg font-semibold mb-2">Available Visualizations</h2>
           <ul className={`list-disc pl-6 text-sm ${theme.textMuted}`}>
