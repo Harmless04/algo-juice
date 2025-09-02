@@ -1203,13 +1203,15 @@ Code: ${codeText}`;
 
   // Theme styles
   const theme = {
-    bg: isDarkMode ? 'bg-gray-900' : 'bg-gray-50',
+    bg: isDarkMode ? 'bg-gray-900' : 'bg-white',
     card: isDarkMode ? 'bg-gray-950' : 'bg-white',
     text: isDarkMode ? 'text-gray-100' : 'text-gray-900',
     textMuted: isDarkMode ? 'text-gray-400' : 'text-gray-500',
-    border: isDarkMode ? 'border-gray-800' : 'border-gray-200',
-    editor: isDarkMode ? 'bg-gray-900' : 'bg-gray-100',
-    button: isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
+    border: isDarkMode ? 'border-gray-800' : 'border-gray-300',
+    editor: isDarkMode ? 'bg-gray-900' : 'bg-gray-50',
+    button: isDarkMode
+      ? 'bg-gray-800 hover:bg-gray-700'
+      : 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-900'
   };
 
   // Render visualizations
