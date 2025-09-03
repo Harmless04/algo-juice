@@ -368,7 +368,7 @@ const generateBFSSteps = (graphData) => {
             dp: dp.map(row => [...row]),
             str1,
             str2,
-            current: { i, j },
+            current: { i: i, j: j },
             match: true,
             description: `Characters match: '${str1[i-1]}' = '${str2[j-1]}', LCS length = ${dp[i][j]}`
           });
@@ -379,7 +379,7 @@ const generateBFSSteps = (graphData) => {
             dp: dp.map(row => [...row]),
             str1,
             str2,
-            current: { i, j },
+            current: { i: i, j: j },
             match: false,
             description: `Characters don't match: '${str1[i-1]}' ≠ '${str2[j-1]}', taking max(${dp[i-1][j]}, ${dp[i][j-1]}) = ${dp[i][j]}`
           });
@@ -812,6 +812,13 @@ Code: ${codeText}`;
         name: 'Tree Traversal',
         type: 'tree',
         dataType: 'tree'
+      },
+      nqueens: {
+        patterns: [/n[- ]?queens?/i, /chess/i, /board/i, /backtrack/i],
+        keywords: ['nqueens', 'n-queens', 'chess', 'board', 'backtrack', 'queen'],
+        name: 'N-Queens Problem',
+        type: 'backtracking',
+        dataType: 'nqueens'
       }
     };
 
@@ -844,7 +851,86 @@ Code: ${codeText}`;
     return bestMatch;
   };
 
-  // Analyze code
+  // Add N-Queens step generator
+  const generateNQueensSteps = (n) => {
+    const steps = [];
+    const board = Array(n).fill(-1);
+
+    const isSafe = (row, col, board) => {
+      for (let i = 0; i < row; i++) {
+        if (
+          board[i] === col ||
+          board[i] - i === col - row ||
+          board[i] + i === col + row
+        ) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    const solve = (row, board) => {
+      if (row === n) {
+        steps.push({
+          type: 'nqueens',
+          n,
+          board: [...board],
+          row,
+          status: 'solution',
+          description: `Solution found: [${board.join(', ')}]`
+        });
+        return;
+      }
+      for (let col = 0; col < n; col++) {
+        steps.push({
+          type: 'nqueens',
+          n,
+          board: [...board],
+          row,
+          col,
+          status: 'trying',
+          description: `Trying row ${row}, col ${col}`
+        });
+        if (isSafe(row, col, board)) {
+          board[row] = col;
+          steps.push({
+            type: 'nqueens',
+            n,
+            board: [...board],
+            row,
+            col,
+            status: 'placed',
+            description: `Placed queen at row ${row}, col ${col}`
+          });
+          solve(row + 1, board);
+          board[row] = -1;
+          steps.push({
+            type: 'nqueens',
+            n,
+            board: [...board],
+            row,
+            col,
+            status: 'backtrack',
+            description: `Backtracking from row ${row}, col ${col}`
+          });
+        } else {
+          steps.push({
+            type: 'nqueens',
+            n,
+            board: [...board],
+            row,
+            col,
+            status: 'unsafe',
+            description: `Unsafe at row ${row}, col ${col}`
+          });
+        }
+      }
+    };
+
+    solve(0, board);
+    return steps;
+  };
+
   const analyzeCode = useCallback(async (codeText) => {
     if (codeText.trim().length < 50) return;
     
@@ -872,6 +958,8 @@ Code: ${codeText}`;
         }
       } else if (aiResult.dataType === 'tree') {
         setInputData('{"value": 50, "left": {"value": 30, "left": {"value": 20}, "right": {"value": 40}}, "right": {"value": 70, "left": {"value": 60}, "right": {"value": 80}}}');
+      } else if (aiResult.dataType === 'nqueens') {
+        setInputData('8');
       }
     } catch (error) {
       setAiError(error.message);
@@ -895,6 +983,8 @@ Code: ${codeText}`;
           }
         } else if (fallbackResult.dataType === 'tree') {
           setInputData('{"value": 50, "left": {"value": 30, "left": {"value": 20}, "right": {"value": 40}}, "right": {"value": 70, "left": {"value": 60}, "right": {"value": 80}}}');
+        } else if (fallbackResult.dataType === 'nqueens') {
+          setInputData('8');
         }
       } else {
         setDetectedAlgorithm(null);
@@ -940,6 +1030,16 @@ Code: ${codeText}`;
       } else if (dataType === 'array') {
         const parsed = JSON.parse(input);
         return Array.isArray(parsed) ? parsed : parsed.array || [];
+      } else if (dataType === 'nqueens') {
+        // Accept either a number or JSON with n
+        if (input.includes('{')) {
+          const parsed = JSON.parse(input);
+          return parsed.n || 8;
+        } else {
+          const num = parseInt(input.trim());
+          if (isNaN(num) || num < 1 || num > 16) return 8;
+          return num;
+        }
       } else {
         // Default to array parsing
         const parsed = JSON.parse(input);
@@ -970,6 +1070,8 @@ Code: ${codeText}`;
           edges: [['A', 'B'], ['A', 'C'], ['B', 'D'], ['C', 'E'], ['D', 'E']],
           startNode: 'A'
         };
+      } else if (dataType === 'nqueens') {
+        return 8; // Default for N-Queens
       }
       return [64, 34, 25, 12, 22, 11, 90]; // Default array
     }
@@ -1007,6 +1109,8 @@ Code: ${codeText}`;
       }
     } else if (algorithm.type === 'tree') {
       return generateTreeTraversalSteps(data);
+    } else if (algorithm.type === 'backtracking' && algorithm.algorithm.includes('N-Queens')) {
+      return generateNQueensSteps(data);
     }
     
     return [];
@@ -1136,6 +1240,11 @@ Code: ${codeText}`;
           return;
         }
       }
+    } else if (detectedAlgorithm.type === 'nqueens') {
+      if (typeof data !== 'number' || data < 1 || data > 16) {
+        alert('Invalid N-Queens input! Please provide a number between 1 and 16.');
+        return;
+      }
     }
 
     try {
@@ -1244,6 +1353,8 @@ Code: ${codeText}`;
       return renderLCSTable();
     } else if (visualState.type === 'tree') {
       return renderTree();
+    } else if (visualState.type === 'nqueens') {
+      return renderNQueens();
     }
 
     return <div className={`h-64 ${theme.card} rounded-md border ${theme.border} p-4 flex items-center justify-center`}>Coming soon!</div>;
@@ -1653,6 +1764,48 @@ Code: ${codeText}`;
     );
   };
 
+  // Add N-Queens visualization renderer
+  const renderNQueens = () => {
+    const { n, board, row, col, status } = visualState;
+    return (
+      <div className={`h-64 ${theme.card} rounded-md border ${theme.border} p-4 flex flex-col items-center`}>
+        <div className="mb-2 text-center">
+          <span className="text-pink-500 font-mono text-sm">N-Queens Board (N={n})</span>
+        </div>
+        <div className="flex justify-center items-center" style={{ width: `${n * 36}px` }}>
+          <div className="grid" style={{ gridTemplateColumns: `repeat(${n}, 36px)` }}>
+            {Array.from({ length: n * n }).map((_, idx) => {
+              const r = Math.floor(idx / n);
+              const c = idx % n;
+              const isQueen = board[r] === c;
+              let cellColor =
+                (r + c) % 2 === 0
+                  ? isDarkMode ? 'bg-gray-700' : 'bg-blue-100'
+                  : isDarkMode ? 'bg-gray-900' : 'bg-white';
+              if (isQueen) cellColor = 'bg-pink-500';
+              if (status === 'trying' && r === row && c === col) cellColor = 'bg-yellow-400';
+              if (status === 'unsafe' && r === row && c === col) cellColor = 'bg-red-500';
+              if (status === 'placed' && r === row && c === col) cellColor = 'bg-green-500';
+              if (status === 'backtrack' && r === row && c === col) cellColor = 'bg-orange-500';
+              return (
+                <div
+                  key={idx}
+                  className={`${cellColor} border border-gray-300 w-9 h-9 flex items-center justify-center transition-all duration-200`}
+                  style={{ fontSize: '20px', color: isQueen ? 'white' : '#555' }}
+                >
+                  {isQueen ? '♛' : ''}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="mt-2 text-center">
+          <span className="text-pink-500 font-mono text-xs">{visualState.description}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`min-h-screen ${theme.bg} ${theme.text}`}>
       {/* Header */}
@@ -1864,6 +2017,7 @@ Code: ${codeText}`;
             <li>Searching: Binary Search</li>
             <li>Dynamic Programming: Fibonacci Sequence, 0/1 Knapsack, Longest Common Subsequence (LCS)</li>
             <li>Tree Traversal: Inorder Traversal</li>
+            <li>Backtracking: N-Queens Problem</li>
           </ul>
         </div>
       </div>
